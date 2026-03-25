@@ -1,4 +1,4 @@
-# Sismógrafo – Estimación de Riesgo Sísmico
+# SISTHMUS – Estimación de Riesgo Sísmico
 
 Desarrollo de un prototipo de plataforma digital que estima el riesgo sísmico
 en Oaxaca
