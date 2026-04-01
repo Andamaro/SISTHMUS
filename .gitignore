@@ -1,0 +1,54 @@
+# =====================
+# Python
+# =====================
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# =====================
+# Entornos y variables
+# =====================
+.env
+.env.*
+.conda/
+.envs/
+
+# =====================
+# Jupyter
+# =====================
+.ipynb_checkpoints/
+
+# =====================
+# VS Code
+# =====================
+.vscode/
+
+# =====================
+# Sistema operativo
+# =====================
+.DS_Store
+Thumbs.db
+
+# =====================
+# Datos y modelos (NO subir)
+# =====================
+*.xlsx
+*.json
+*.h5
+*.pt
+*.pkl
+!modelos/*.pkl
+
+# =====================
+# Bases de datos
+# =====================
+*.db
+*.sqlite
+
+
+# =====================
+# Entorno virtual
+# =====================
+venv/
+env/
