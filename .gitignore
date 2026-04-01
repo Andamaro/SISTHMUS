@@ -39,7 +39,7 @@ Thumbs.db
 *.h5
 *.pt
 *.pkl
-
+!modelos/*.pkl
 # =====================
 # Bases de datos
 # =====================
