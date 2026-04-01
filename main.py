@@ -2,6 +2,15 @@ from fastapi import FastAPI, Depends
 from sqlalchemy.orm import Session
 from database import get_db, engine
 import models
+import joblib
+import pandas as pd
+
+# Cargar modelos ML
+modelo_victimas = joblib.load("modelos/modelo_victimas.pkl")
+modelo_dano     = joblib.load("modelos/modelo_dano.pkl")
+modelo_riesgo   = joblib.load("modelos/modelo_riesgo.pkl")
+
+
 # Constantes económicas (fuente: CONAVI / CENAPRED 2024)
 COSTO_M2_RECONSTRUCCION = 8500      # MXN por m² promedio Oaxaca
 SUPERFICIE_PROMEDIO_M2 = 45         # m² promedio vivienda rural Oaxaca
@@ -16,8 +25,8 @@ app = FastAPI()
 def ping():
     return {"mensaje": "el servidor funciona"}
 
-@app.post("/api/simular")
-def simular(datos: dict, db: Session = Depends(get_db)):
+@app.post("/api/estimar")
+def estimar(datos: dict, db: Session = Depends(get_db)):
     Nvivu   = datos["Nvivu"]
     Nvivm   = datos["Nvivm"]
     PC      = datos["PC"]
@@ -39,7 +48,26 @@ def simular(datos: dict, db: Session = Depends(get_db)):
     costo_victimas  = round(victimas_ki * VALOR_ESTADISTICO_VIDA)
     costo_total     = costo_viviendas + costo_albergue + costo_victimas
 
+    # Predicción ML
+    sismo_input = pd.DataFrame([{
+    'magnitud':            datos.get("magnitud", 0),
+    'profundidad_km':      datos.get("profundidad_km", 0),
+    'distancia_oaxaca_km': datos.get("distancia_oaxaca_km", 0)}])
 
+    victimas_ml = round(modelo_victimas.predict(sismo_input)[0])
+    dano_ml     = round(modelo_dano.predict(sismo_input)[0])
+    riesgo_ml = modelo_riesgo.predict(sismo_input)[0]
+
+    # Corrección por regla para casos extremos
+    magnitud_val    = datos.get("magnitud", 0)
+    distancia_val   = datos.get("distancia_oaxaca_km", 999)
+
+    if magnitud_val >= 8.0 and distancia_val < 150:
+        riesgo_ml = "alto"
+    elif magnitud_val >= 7.5:
+        riesgo_ml = "alto"
+    elif magnitud_val <= 5.5 and riesgo_ml != "bajo":
+        riesgo_ml = "bajo"
 
     registro = models.Simulacion(
     nvivu=Nvivu, nvivm=Nvivm, pc=PC, pe=PE, hab_viv=hab_viv,
@@ -57,12 +85,14 @@ def simular(datos: dict, db: Session = Depends(get_db)):
     "id": registro.id_simulaciones,
     "viviendas_inhabitables": registro.viviendas_inhabitables,
     "personas_sin_hogar": registro.personas_sin_hogar,
-    "victimas_ki": registro.victimas_ki,
-    "costos": {
-        "reconstruccion_viviendas_mxn": costo_viviendas,
-        "albergue_temporal_mxn": costo_albergue,
-        "valor_vidas_humanas_mxn": costo_victimas,
-        "total_estimado_mxn": costo_total
+    "formulas": {
+        "victimas_coburn_spence": registro.victimas_ki,
+        "costos_mxn": costo_total
+    },
+    "modelo_ml": {
+        "victimas_estimadas": victimas_ml,
+        "dano_miles_usd": dano_ml,
+        "nivel_riesgo": riesgo_ml
     }
 }
 
