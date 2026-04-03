@@ -33,15 +33,22 @@ Thumbs.db
 # =====================
 # Datos y modelos (NO subir)
 # =====================
-*.csv
 *.xlsx
 *.json
 *.h5
 *.pt
 *.pkl
+!modelos/*.pkl
 
 # =====================
 # Bases de datos
 # =====================
 *.db
 *.sqlite
+
+
+# =====================
+# Entorno virtual
+# =====================
+venv/
+env/
