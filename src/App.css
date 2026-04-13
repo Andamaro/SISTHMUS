@@ -1,0 +1,20 @@
+.boton-pri {
+  background-color: #343434;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.boton-pri:hover {
+  background-color: #c22c2c;
+  transform: scale(1.05);
+}
+
+.boton-pri:focus-visible {
+  outline: 2px solid #1d4ed8;
+  outline-offset: 2px;
+}
