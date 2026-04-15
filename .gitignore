@@ -35,7 +35,14 @@ Thumbs.db
 # =====================
 *.csv
 *.xlsx
-*.json
+# Datos y modelos (NO subir)
+*.csv
+*.xlsx
+*.h5
+*.pt
+*.pkl
+data/*.json
+notebook/*.json
 *.h5
 *.pt
 *.pkl
