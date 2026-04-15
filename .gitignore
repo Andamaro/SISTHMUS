@@ -41,8 +41,6 @@ Thumbs.db
 *.h5
 *.pt
 *.pkl
-data/*.json
-notebook/*.json
 *.h5
 *.pt
 *.pkl
