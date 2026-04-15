@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { estimarRiesgo } from "../utils/api.js";
-import "./SismoPanel.css";
+import "./PanelS.css";
+
+const clamp = (adobe, factor, coef) =>
+  Math.min(0.95, parseFloat((adobe * coef * factor).toFixed(3)));
 
 export default function SismoPanel({ lugar, onResultado }) {
   const [form, setForm] = useState({
@@ -13,16 +16,14 @@ export default function SismoPanel({ lugar, onResultado }) {
 
   useEffect(() => {
     if (!lugar) return;
-    const distancia = calcularDistanciaOaxaca(
-      parseFloat(lugar.lat),
-      parseFloat(lugar.lng)
-    );
-    setForm((f) => ({ ...f, distancia_oaxaca_km: distancia }));
+    setForm((f) => ({
+      ...f,
+      distancia_oaxaca_km: calcularDistanciaOaxaca(+lugar.lat, +lugar.lng),
+    }));
   }, [lugar]);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+  const handleChange = ({ target: { name, value } }) =>
+    setForm((f) => ({ ...f, [name]: value }));
 
   const handleSubmit = async () => {
     if (!form.magnitud || !form.profundidad_km) {
@@ -35,72 +36,29 @@ export default function SismoPanel({ lugar, onResultado }) {
     try {
       const mun = lugar?.municipio;
 
-      let datos;
+      const { magnitud, profundidad_km, distancia_oaxaca_km } =
+        Object.fromEntries(Object.entries(form).map(([k, v]) => [k, parseFloat(v)]));
 
-      if (mun) {
-        const pob = mun.poblacion_total;
-        const adobe = mun.pct_adobe;
-        const hab_viv = mun.hab_viv;
+      const adobe = mun?.pct_adobe ?? 0;
+      const factor_suelo = { A: 0.8, B: 1.0, C: 1.3, D: 1.6 }[mun?.tipo_suelo] ?? 1.0;
+      const total_viviendas = mun ? Math.round(mun.poblacion_total / mun.hab_viv) : 0;
 
-        const total_viviendas = Math.round(pob / hab_viv);
-
-        const Nvivu = Math.round(total_viviendas * (1 - adobe));
-        const Nvivm = Math.round(total_viviendas * adobe);
-
-        const factor_suelo =
-          { A: 0.8, B: 1.0, C: 1.3, D: 1.6 }[mun.tipo_suelo] ?? 1.0;
-
-        const PC = Math.min(
-          0.95,
-          parseFloat((adobe * 0.6 * factor_suelo).toFixed(3)),
-        );
-        const PE = Math.min(
-          0.95,
-          parseFloat((adobe * 0.85 * factor_suelo).toFixed(3)),
-        );
-
-        const C = Math.round(pob * 0.7);
-
-        const M1 = 0.8;
-        const M2 = adobe > 0.5 ? 0.9 : 0.6;
-        const M3 = mun.vs30 < 300 ? 0.9 : 0.6;
-        const M4 = 0.4;
-        const M5 = 0.5;
-
-        datos = {
-          Nvivu,
-          Nvivm,
-          PC,
-          PE,
-          hab_viv,
-          C,
-          M1,
-          M2,
-          M3,
-          M4,
-          M5,
-          magnitud: parseFloat(form.magnitud),
-          profundidad_km: parseFloat(form.profundidad_km),
-          distancia_oaxaca_km: parseFloat(form.distancia_oaxaca_km),
-        };
-      } else {
-        datos = {
-          Nvivu: 1000,
-          Nvivm: 500,
-          PC: 0.3,
-          PE: 0.6,
-          hab_viv: 3.5,
-          C: 200,
-          M1: 0.8,
-          M2: 0.7,
-          M3: 0.6,
-          M4: 0.4,
-          M5: 0.5,
-          magnitud: parseFloat(form.magnitud),
-          profundidad_km: parseFloat(form.profundidad_km),
-          distancia_oaxaca_km: parseFloat(form.distancia_oaxaca_km),
-        };
-      }
+      const datos = {
+        Nvivu:               mun ? Math.round(total_viviendas * (1 - adobe)) : 1000,
+        Nvivm:               mun ? Math.round(total_viviendas * adobe)        : 500,
+        PC:                  mun ? clamp(adobe, factor_suelo, 0.6)            : 0.3,
+        PE:                  mun ? clamp(adobe, factor_suelo, 0.85)           : 0.6,
+        hab_viv:             mun?.hab_viv ?? 3.5,
+        C:                   mun ? Math.round(mun.poblacion_total * 0.7)      : 200,
+        M1: 0.8,
+        M2:                  mun ? (adobe > 0.5 ? 0.9 : 0.6) : 0.7,
+        M3:                  mun ? (mun.vs30 < 300 ? 0.9 : 0.6) : 0.6,
+        M4: 0.4,
+        M5: 0.5,
+        magnitud,
+        profundidad_km,
+        distancia_oaxaca_km,
+      };
 
       console.log("Datos enviados al backend:", datos);
       const resultado = await estimarRiesgo(datos);
@@ -125,7 +83,7 @@ export default function SismoPanel({ lugar, onResultado }) {
   return (
     <div className="panel">
       <div className="panel__header">
-        <h3>Estimación de riesgo sísmico</h3>
+        <h3>Sisthmus</h3>
       </div>
       <div className="panel__location">
         <span className="panel__location-label">Ubicación seleccionada</span>
@@ -161,7 +119,7 @@ export default function SismoPanel({ lugar, onResultado }) {
         </div>
       ) : (
         <div className="panel__municipio panel__municipio--warn">
-          <span>El municipio no fue encontrado en la base de datos</span>
+          <span>Texto de testeo: El municipio no fue encontrado en la base de datos local</span>
         </div>
       )}
 
@@ -191,9 +149,9 @@ export default function SismoPanel({ lugar, onResultado }) {
           <input
             type="number" name="distancia_oaxaca_km"
             value={form.distancia_oaxaca_km} onChange={handleChange}
-            placeholder="ej. 80" min="0" step="1"
+            placeholder="Por ejemplo: 80" min="0" step="1"
           />
-          <span className="panel__hint">Calculada automáticamente</span>
+          <span className="panel__hint">Distancia del lugar seleccionado a oaxaca</span>
         </div>
 
         {error && <p className="panel__error">{error}</p>}

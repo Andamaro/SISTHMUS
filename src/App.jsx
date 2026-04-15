@@ -1,8 +1,7 @@
-// src/App.jsx
 import { useState } from "react";
 import "./App.css";
 import Map from "./components/Map.jsx";
-import SismoPanel from "./components/SismoPanel.jsx";
+import SismoPanel from "./components/PanelS.jsx";
 
 function App() {
   const [lugar, setLugar] = useState(null);
@@ -18,16 +17,12 @@ function App() {
         />
       </div>
 
-      //-- avr si recuerdo mandar esto al css despues xd
       {resultado && (
-        <div style={{
-          padding: "16px 24px", background: "#242424",
-          borderTop: "1px solid #e0e0e0", display: "flex", gap: "32px"
-        }}>
-          <span>Riesgo: <strong>{resultado.modelo_ml.nivel_riesgo}</strong></span>
-          <span>Víctimas est.: <strong>{resultado.modelo_ml.victimas_estimadas}</strong></span>
-          <span>Sin hogar: <strong>{resultado.personas_sin_hogar}</strong></span>
-          <span>Costo: <strong>${resultado.formulas.costos_mxn?.toLocaleString("es-MX")} MXN</strong></span>
+        <div className="resultados">
+          <span>Riesgo sismico: <strong>{resultado.modelo_ml.nivel_riesgo}</strong></span>
+          <span>Víctimas estimadas: <strong>{resultado.modelo_ml.victimas_estimadas}</strong></span>
+          <span>Personas sin hogar: <strong>{resultado.personas_sin_hogar}</strong></span>
+          <span>Costo total de los daños: <strong>${resultado.formulas.costos_mxn?.toLocaleString("es-MX")} MXN</strong></span>
         </div>
       )}
     </div>

@@ -18,3 +18,17 @@
   outline: 2px solid #1d4ed8;
   outline-offset: 2px;
 }
+
+.resultados {
+  padding: 16px 24px;
+  background: #242424;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  gap: 32px;
+}
+
+.resultadosC {
+  display: "flex";
+  flex-direction: "column";
+  height: "100vh";
+}
